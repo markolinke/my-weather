@@ -85,7 +85,7 @@ export function buildDayForecast(hourly) {
         const hasAnyHour = [...byDayHour.keys()].some((k) => k.startsWith(dayKey));
         if (!hasAnyHour) break;
 
-        const label = day.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+        const label = day.toLocaleDateString([], { weekday: 'short', day: 'numeric' });
         const slots = DAY_SLOTS.map(({ name, hour }) => {
             const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}-${hour}`;
             const idx = byDayHour.get(key);

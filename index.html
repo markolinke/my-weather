@@ -82,7 +82,15 @@
             <div class="hour-strip" id="hour-strip"></div>
 
             <h3 class="section-gap">Next 9 Days</h3>
-            <div class="day-forecast-list" id="day-forecast-list"></div>
+            <div class="day-forecast-board">
+                <div class="day-forecast-rail" aria-hidden="true">
+                    <div class="day-rail-head"></div>
+                    <div class="day-rail-label">AM</div>
+                    <div class="day-rail-label">Mid</div>
+                    <div class="day-rail-label">PM</div>
+                </div>
+                <div class="day-forecast-list" id="day-forecast-list"></div>
+            </div>
             <p class="data-credit">Weather data provided by <a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeather</a>. Forecast by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a></p>
         </div>
         <p id="forecast-unavailable" class="forecast-note hidden">Forecast unavailable right now.</p>

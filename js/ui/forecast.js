@@ -47,11 +47,9 @@ export function renderForecast(weather, forecast) {
             <div class="day-forecast-label">${day.label}</div>
             <div class="day-slots">
                 ${day.slots.map((slot) => `
-                    <div class="day-slot ${slot.code == null ? '' : weatherToneClass(slot.code)}">
-                        <div class="day-slot-name">${slot.name}</div>
+                    <div class="day-slot ${slot.code == null ? '' : weatherToneClass(slot.code)}" title="${slot.name}: ${slot.cond}">
                         <div class="wx-icon">${slot.code == null ? '' : weatherIconSvg(slot.code)}</div>
                         <div class="day-slot-temp ${tempToneClass(slot.temp)}">${slot.temp == null ? '—' : `${slot.temp.toFixed(0)}°`}</div>
-                        <div class="day-slot-cond">${slot.cond}</div>
                         ${precipMarkup(slot.precip)}
                     </div>
                 `).join('')}
