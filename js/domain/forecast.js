@@ -1,4 +1,4 @@
-import { DAY_FORECAST_COUNT } from '../config.js';
+import { DAY_FORECAST_COUNT, HOUR_FORECAST_COUNT } from '../config.js';
 import { wmoLabel } from './wmo.js';
 
 /** Open-Meteo timezone=auto returns local wall time without offset, e.g. 2026-08-26T14:00 */
@@ -31,14 +31,14 @@ export function buildDeltas(weather, hourly) {
     };
 }
 
-export function buildSixHourForecast(hourly) {
+export function buildHourlyForecast(hourly) {
     const nowIdx = nearestHourIndex(hourly.time, Date.now());
     // Prefer the current hour or the next one if we landed slightly in the past
     let start = nowIdx;
     if (parseLocalHour(hourly.time[start]).getTime() < Date.now() - 30 * 60 * 1000) {
         start = Math.min(start + 1, hourly.time.length - 1);
     }
-    const end = Math.min(start + 6, hourly.time.length);
+    const end = Math.min(start + HOUR_FORECAST_COUNT, hourly.time.length);
     const rows = [];
     for (let i = start; i < end; i++) {
         const when = parseLocalHour(hourly.time[i]);

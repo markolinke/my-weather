@@ -7,3 +7,6 @@ export const FORECAST_DAYS = 10;
 
 /** Horizontal day strip: days ahead from tomorrow. */
 export const DAY_FORECAST_COUNT = 9;
+
+/** Horizontal hour strip: hours ahead from now. */
+export const HOUR_FORECAST_COUNT = 12;

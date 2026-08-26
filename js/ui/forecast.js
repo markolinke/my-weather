@@ -1,7 +1,7 @@
 import {
     buildDayForecast,
     buildDeltas,
-    buildSixHourForecast,
+    buildHourlyForecast,
 } from '../domain/forecast.js';
 import { setDelta } from './deltas.js';
 import {
@@ -32,7 +32,7 @@ export function renderForecast(weather, forecast) {
     setDelta(document.getElementById('humidity-delta'), deltas.humidity, 0, '%');
     setDelta(document.getElementById('wind-delta'), deltas.wind, 1, ' m/s');
 
-    document.getElementById('hour-strip').innerHTML = buildSixHourForecast(forecast.hourly).map((row) => `
+    document.getElementById('hour-strip').innerHTML = buildHourlyForecast(forecast.hourly).map((row) => `
         <div class="hour-cell ${weatherToneClass(row.code)}">
             <div class="hour-time">${row.timeLabel}</div>
             <div class="wx-icon">${weatherIconSvg(row.code)}</div>
