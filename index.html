@@ -21,6 +21,7 @@
         }
         h2 { margin-top: 0; color: #1a1a1a; font-size: 22px; }
         h3 { margin: 20px 0 10px 0; font-size: 16px; text-transform: uppercase; color: #495057; letter-spacing: 0.5px; }
+        h3.section-gap { margin-top: 36px; }
         .status-msg {
             font-style: italic;
             color: #6c757d;
@@ -177,6 +178,46 @@
             width: 26px;
             height: 26px;
             margin-bottom: 4px;
+        }
+        .day-forecast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 36px 0 10px 0;
+        }
+        .day-forecast-header h3 {
+            margin: 0;
+        }
+        .day-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .day-nav-btn {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            background: #fff;
+            color: #212529;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .day-nav-btn:hover:not(:disabled) {
+            background: #f1f3f5;
+        }
+        .day-nav-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+        .day-page-label {
+            font-size: 11px;
+            color: #868e96;
+            min-width: 4.5em;
+            text-align: center;
         }
         .day-forecast-list {
             display: grid;
@@ -519,7 +560,14 @@
             <h3>Next 6 Hours</h3>
             <div class="hour-strip" id="hour-strip"></div>
 
-            <h3>Next 3 Days</h3>
+            <div class="day-forecast-header">
+                <h3>Next 3 Days</h3>
+                <div class="day-nav">
+                    <button type="button" class="day-nav-btn" id="day-prev" aria-label="Previous three days">‹</button>
+                    <span class="day-page-label" id="day-page-label"></span>
+                    <button type="button" class="day-nav-btn" id="day-next" aria-label="Next three days">›</button>
+                </div>
+            </div>
             <div class="day-forecast-list" id="day-forecast-list"></div>
             <p class="data-credit">Forecast data by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a></p>
         </div>
@@ -537,6 +585,15 @@
         } else {
             showError("Geolocation is not supported by this browser.");
         }
+
+        document.getElementById('day-prev').addEventListener('click', () => {
+            dayForecastPage -= 1;
+            renderDayForecastPage();
+        });
+        document.getElementById('day-next').addEventListener('click', () => {
+            dayForecastPage += 1;
+            renderDayForecastPage();
+        });
     });
 
     async function handleLocationSuccess(position) {
@@ -547,7 +604,7 @@
 
         const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
         const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
-        const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&wind_speed_unit=ms&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation_probability&past_hours=24&forecast_hours=96`;
+        const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&wind_speed_unit=ms&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation_probability&past_hours=24&forecast_days=10`;
 
         try {
             const [weatherRes, aqiRes, forecastRes] = await Promise.all([
@@ -775,7 +832,41 @@
         return rows;
     }
 
-    function buildThreeDaySlots(hourly) {
+    const DAY_PAGE_SIZE = 3;
+    const MAX_DAY_PAGES = 3; // 9 days ahead in 3-day windows
+    let dayForecastPage = 0;
+    let dayForecastHourly = null;
+
+    function tomorrowMidnight() {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() + 1);
+        return start;
+    }
+
+    function availableForecastDayCount(hourly) {
+        const byDay = new Set();
+        hourly.time.forEach((iso) => {
+            const when = parseLocalHour(iso);
+            byDay.add(`${when.getFullYear()}-${when.getMonth()}-${when.getDate()}`);
+        });
+        const start = tomorrowMidnight();
+        let count = 0;
+        for (let d = 0; d < DAY_PAGE_SIZE * MAX_DAY_PAGES; d++) {
+            const day = new Date(start);
+            day.setDate(start.getDate() + d);
+            const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+            if (!byDay.has(key)) break;
+            count += 1;
+        }
+        return count;
+    }
+
+    function dayPageCount(hourly) {
+        return Math.max(1, Math.ceil(availableForecastDayCount(hourly) / DAY_PAGE_SIZE));
+    }
+
+    function buildThreeDaySlots(hourly, page = 0) {
         const slots = [
             { name: 'Morning', hour: 8 },
             { name: 'Midday', hour: 14 },
@@ -789,11 +880,10 @@
         });
 
         const days = [];
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        start.setDate(start.getDate() + 1);
+        const start = tomorrowMidnight();
+        start.setDate(start.getDate() + page * DAY_PAGE_SIZE);
 
-        for (let d = 0; d < 3; d++) {
+        for (let d = 0; d < DAY_PAGE_SIZE; d++) {
             const day = new Date(start);
             day.setDate(start.getDate() + d);
             const label = day.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
@@ -814,6 +904,34 @@
         return days;
     }
 
+    function renderDayForecastPage() {
+        if (!dayForecastHourly) return;
+
+        const pages = dayPageCount(dayForecastHourly);
+        dayForecastPage = Math.max(0, Math.min(dayForecastPage, pages - 1));
+
+        document.getElementById('day-forecast-list').innerHTML = buildThreeDaySlots(dayForecastHourly, dayForecastPage).map((day) => `
+            <div class="day-forecast">
+                <div class="day-forecast-label">${day.label}</div>
+                <div class="day-slots">
+                    ${day.slots.map((slot) => `
+                        <div class="day-slot ${slot.code == null ? '' : weatherToneClass(slot.code)}">
+                            <div class="day-slot-name">${slot.name}</div>
+                            <div class="wx-icon">${slot.code == null ? '' : weatherIconSvg(slot.code)}</div>
+                            <div class="day-slot-temp ${tempToneClass(slot.temp)}">${slot.temp == null ? '—' : `${slot.temp.toFixed(0)}°`}</div>
+                            <div class="day-slot-cond">${slot.cond}</div>
+                            ${precipMarkup(slot.precip)}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('day-page-label').textContent = `${dayForecastPage + 1} / ${pages}`;
+        document.getElementById('day-prev').disabled = dayForecastPage <= 0;
+        document.getElementById('day-next').disabled = dayForecastPage >= pages - 1;
+    }
+
     function renderForecast(weather, forecast) {
         const sections = document.getElementById('forecast-sections');
         const unavailable = document.getElementById('forecast-unavailable');
@@ -821,6 +939,7 @@
         if (!forecast || !forecast.hourly || !forecast.hourly.time?.length) {
             sections.classList.add('hidden');
             unavailable.classList.remove('hidden');
+            dayForecastHourly = null;
             ['temp-delta', 'humidity-delta', 'wind-delta'].forEach((id) => {
                 document.getElementById(id).classList.add('hidden');
             });
@@ -845,22 +964,9 @@
             </div>
         `).join('');
 
-        document.getElementById('day-forecast-list').innerHTML = buildThreeDaySlots(forecast.hourly).map((day) => `
-            <div class="day-forecast">
-                <div class="day-forecast-label">${day.label}</div>
-                <div class="day-slots">
-                    ${day.slots.map((slot) => `
-                        <div class="day-slot ${slot.code == null ? '' : weatherToneClass(slot.code)}">
-                            <div class="day-slot-name">${slot.name}</div>
-                            <div class="wx-icon">${slot.code == null ? '' : weatherIconSvg(slot.code)}</div>
-                            <div class="day-slot-temp ${tempToneClass(slot.temp)}">${slot.temp == null ? '—' : `${slot.temp.toFixed(0)}°`}</div>
-                            <div class="day-slot-cond">${slot.cond}</div>
-                            ${precipMarkup(slot.precip)}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
+        dayForecastHourly = forecast.hourly;
+        dayForecastPage = 0;
+        renderDayForecastPage();
     }
 
     function renderDashboard(weather, air, forecast) {
