@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runner's Weather & Air Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 15px;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        h2 { margin-top: 0; color: #1a1a1a; font-size: 22px; }
+        h3 { margin: 20px 0 10px 0; font-size: 16px; text-transform: uppercase; color: #495057; letter-spacing: 0.5px; }
+        .status-msg {
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .metric-box {
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #495057;
+        }
+        .metric-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #6c757d;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .aqi-full-box {
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #212529;
+            margin-bottom: 15px;
+        }
+        .pollutant-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: #fdfdfd;
+            border: 1px solid #e9ecef;
+            padding: 12px;
+            border-radius: 10px;
+        }
+        .pollutant-item {
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed #e9ecef;
+        }
+        .pollutant-name { font-weight: 500; color: #495057; }
+        .pollutant-val { font-weight: bold; color: #212529; }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            background: #f8d7da;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🏃‍♂️ Live Atmospheric Conditions</h2>
+    <div id="status" class="status-msg">Requesting browser location...</div>
+    <div id="error" class="error hidden"></div>
+
+    <div id="dashboard" class="hidden">
+        <h3>Primary Weather Metrics</h3>
+        <div class="data-grid">
+            <div class="metric-box">
+                <div class="metric-title">Temperature</div>
+                <div class="metric-value"><span id="temp">--</span>°C</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Humidity</div>
+                <div class="metric-value"><span id="humidity">--</span>%</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Wind Speed</div>
+                <div class="metric-value"><span id="wind">--</span> m/s</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Current Sky</div>
+                <div class="metric-value" id="desc" style="font-size: 15px; padding-top: 2px;">--</div>
+            </div>
+        </div>
+
+        <h3>Air Quality Overview</h3>
+        <div class="aqi-full-box">
+            <div class="metric-title">Overall Air Quality Index (AQI)</div>
+            <div class="metric-value" id="aqi-display">--</div>
+            <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">Scale: 1 (Good) to 5 (Very Poor)</div>
+        </div>
+
+        <h3>Raw Pollutants Breakdown (<span style="text-transform: none;">μg/m³</span>)</h3>
+        <div class="pollutant-list">
+            <div class="pollutant-item">
+                <span class="pollutant-name">PM2.5 (Fine Dust)</span>
+                <span class="pollutant-val" id="pm2_5">--</span>
+            </div>
+            <div class="pollutant-item">
+                <span class="pollutant-name">PM10 (Coarse Dust)</span>
+                <span class="pollutant-val" id="pm10">--</span>
+            </div>
+            <div class="pollutant-item">
+                <span class="pollutant-name">O₃ (Ozone)</span>
+                <span class="pollutant-val" id="o3">--</span>
+            </div>
+            <div class="pollutant-item">
+                <span class="pollutant-name">NO₂ (Nitrogen Dioxide)</span>
+                <span class="pollutant-val" id="no2">--</span>
+            </div>
+            <div class="pollutant-item">
+                <span class="pollutant-name">SO₂ (Sulfur Dioxide)</span>
+                <span class="pollutant-val" id="so2">--</span>
+            </div>
+            <div class="pollutant-item">
+                <span class="pollutant-name">CO (Carbon Monoxide)</span>
+                <span class="pollutant-val" id="co">--</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ⚠️ REPLACE THIS WITH YOUR FREE API KEY FROM OPENWEATHERMAP
+    const API_KEY = 'd648c8c85c21766365eda40e92917da2'; 
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(handleLocationSuccess, handleLocationError);
+        } else {
+            showError("Geolocation is not supported by this browser.");
+        }
+    });
+
+    async function handleLocationSuccess(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        
+        document.getElementById('status').innerText = `Location found. Synchronizing API feeds...`;
+
+        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+        const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
+   
+
+        try {
+            const [weatherRes, aqiRes] = await Promise.all([fetch(weatherUrl), fetch(aqiUrl)]);
+            if (!weatherRes.ok || !aqiRes.ok) throw new Error("Failed to communicate with OpenWeather data servers.");
+
+            const weatherData = await weatherRes.json();
+            const aqiData = await aqiRes.json();
+
+            renderDashboard(weatherData, aqiData);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function renderDashboard(weather, air) {
+        document.getElementById('status').innerText = `Location: ${weather.name}`;
+        document.getElementById('dashboard').classList.remove('hidden');
+
+        // Weather Elements
+        document.getElementById('temp').innerText = weather.main.temp.toFixed(1);
+        document.getElementById('humidity').innerText = weather.main.humidity;
+        document.getElementById('wind').innerText = weather.wind.speed.toFixed(1);
+        const description = weather.weather[0].description;
+        document.getElementById('desc').innerText = description.charAt(0).toUpperCase() + description.slice(1);
+
+        // Core AQI Value
+        const aqiValue = air.list[0].main.aqi;
+        const aqiLabels = {1: "1 (Good)", 2: "2 (Fair)", 3: "3 (Moderate)", 4: "4 (Poor)", 5: "5 (Very Poor)"};
+        document.getElementById('aqi-display').innerText = aqiLabels[aqiValue] || aqiValue;
+
+        // Raw Pollutant Compounding Elements
+        const components = air.list[0].components;
+        document.getElementById('pm2_5').innerText = components.pm2_5.toFixed(1);
+        document.getElementById('pm10').innerText = components.pm10.toFixed(1);
+        document.getElementById('o3').innerText = components.o3.toFixed(1);
+        document.getElementById('no2').innerText = components.no2.toFixed(1);
+        document.getElementById('so2').innerText = components.so2.toFixed(1);
+        document.getElementById('co').innerText = components.co.toFixed(1);
+    }
+
+    function handleLocationError(error) {
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                showError("Location access denied. Please verify browser or device permissions.");
+                break;
+            default:
+                showError("Unable to identify exact regional coordinates.");
+        }
+    }
+
+    function showError(message) {
+        document.getElementById('status').classList.add('hidden');
+        const errorDiv = document.getElementById('error');
+        errorDiv.innerText = message;
+        errorDiv.classList.remove('hidden');
+    }
+</script>
+
+</body>
+</html>
