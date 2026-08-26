@@ -1,3 +1,4 @@
+import { buildObservationStatus } from '../domain/observation.js';
 import { buildRainIndicator } from '../domain/rain.js';
 import { renderAir } from './air.js';
 import { renderForecast } from './forecast.js';
@@ -10,7 +11,10 @@ const RAIN_TONE = {
 };
 
 export function renderDashboard(weather, air, forecast) {
-    document.getElementById('status').innerText = `Location: ${weather.name}`;
+    document.getElementById('status').innerText = buildObservationStatus({
+        dt: weather.dt,
+        placeLabel: weather.name,
+    });
     document.getElementById('dashboard').classList.remove('hidden');
 
     document.getElementById('temp').innerText = weather.main.temp.toFixed(1);
