@@ -48,6 +48,108 @@
             font-size: 18px;
             font-weight: bold;
         }
+        .metric-delta {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        .metric-delta.up { color: #c92a2a; }
+        .metric-delta.down { color: #1971c2; }
+        .metric-delta.flat { color: #868e96; }
+        .forecast-note {
+            font-size: 13px;
+            color: #868e96;
+            margin: 0 0 8px 0;
+        }
+        .hour-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        @media (min-width: 420px) {
+            .hour-strip { grid-template-columns: repeat(6, 1fr); }
+        }
+        .hour-cell {
+            background: #f1f3f5;
+            border-radius: 10px;
+            padding: 10px 6px;
+            text-align: center;
+        }
+        .hour-time {
+            font-size: 11px;
+            font-weight: 700;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .hour-temp {
+            font-size: 16px;
+            font-weight: 700;
+            color: #212529;
+        }
+        .hour-cond {
+            font-size: 11px;
+            color: #495057;
+            margin-top: 4px;
+            line-height: 1.25;
+        }
+        .hour-precip {
+            font-size: 10px;
+            color: #868e96;
+            margin-top: 4px;
+        }
+        .day-forecast-list {
+            display: grid;
+            gap: 12px;
+        }
+        .day-forecast {
+            background: #fdfdfd;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .day-forecast-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 10px;
+        }
+        .day-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .day-slot {
+            text-align: center;
+        }
+        .day-slot-name {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #6c757d;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .day-slot-temp {
+            font-size: 15px;
+            font-weight: 700;
+            color: #212529;
+        }
+        .day-slot-cond {
+            font-size: 11px;
+            color: #495057;
+            margin-top: 3px;
+            line-height: 1.25;
+        }
+        .data-credit {
+            margin-top: 16px;
+            font-size: 11px;
+            color: #868e96;
+        }
+        .data-credit a {
+            color: #495057;
+        }
         .aqi-full-box {
             background: #f1f3f5;
             padding: 15px;
@@ -305,14 +407,17 @@
             <div class="metric-box">
                 <div class="metric-title">Temperature</div>
                 <div class="metric-value"><span id="temp">--</span>°C</div>
+                <div class="metric-delta flat hidden" id="temp-delta"></div>
             </div>
             <div class="metric-box">
                 <div class="metric-title">Humidity</div>
                 <div class="metric-value"><span id="humidity">--</span>%</div>
+                <div class="metric-delta flat hidden" id="humidity-delta"></div>
             </div>
             <div class="metric-box">
                 <div class="metric-title">Wind Speed</div>
                 <div class="metric-value"><span id="wind">--</span> m/s</div>
+                <div class="metric-delta flat hidden" id="wind-delta"></div>
             </div>
             <div class="metric-box">
                 <div class="metric-title">Current Sky</div>
@@ -351,6 +456,16 @@
 
         <h3>Raw Pollutants Breakdown (<span style="text-transform: none;">μg/m³</span>)</h3>
         <div class="pollutant-list" id="pollutant-list"></div>
+
+        <div id="forecast-sections" class="hidden">
+            <h3>Next 6 Hours</h3>
+            <div class="hour-strip" id="hour-strip"></div>
+
+            <h3>Next 3 Days</h3>
+            <div class="day-forecast-list" id="day-forecast-list"></div>
+            <p class="data-credit">Forecast data by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a></p>
+        </div>
+        <p id="forecast-unavailable" class="forecast-note hidden">Forecast unavailable right now.</p>
     </div>
 </div>
 
@@ -369,21 +484,26 @@
     async function handleLocationSuccess(position) {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
-        
+
         document.getElementById('status').innerText = `Location found. Synchronizing API feeds...`;
 
         const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
         const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
-   
+        const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&wind_speed_unit=ms&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation_probability&past_hours=24&forecast_hours=96`;
 
         try {
-            const [weatherRes, aqiRes] = await Promise.all([fetch(weatherUrl), fetch(aqiUrl)]);
+            const [weatherRes, aqiRes, forecastRes] = await Promise.all([
+                fetch(weatherUrl),
+                fetch(aqiUrl),
+                fetch(forecastUrl),
+            ]);
             if (!weatherRes.ok || !aqiRes.ok) throw new Error("Failed to communicate with OpenWeather data servers.");
 
             const weatherData = await weatherRes.json();
             const aqiData = await aqiRes.json();
+            const forecastData = forecastRes.ok ? await forecastRes.json() : null;
 
-            renderDashboard(weatherData, aqiData);
+            renderDashboard(weatherData, aqiData, forecastData);
         } catch (err) {
             showError(err.message);
         }
@@ -437,7 +557,192 @@
         return clampPercent((value / max) * 100);
     }
 
-    function renderDashboard(weather, air) {
+    function wmoLabel(code) {
+        const map = {
+            0: 'Clear',
+            1: 'Mainly clear',
+            2: 'Partly cloudy',
+            3: 'Overcast',
+            45: 'Fog',
+            48: 'Rime fog',
+            51: 'Light drizzle',
+            53: 'Drizzle',
+            55: 'Dense drizzle',
+            56: 'Freezing drizzle',
+            57: 'Freezing drizzle',
+            61: 'Light rain',
+            63: 'Rain',
+            65: 'Heavy rain',
+            66: 'Freezing rain',
+            67: 'Freezing rain',
+            71: 'Light snow',
+            73: 'Snow',
+            75: 'Heavy snow',
+            77: 'Snow grains',
+            80: 'Light showers',
+            81: 'Showers',
+            82: 'Heavy showers',
+            85: 'Snow showers',
+            86: 'Snow showers',
+            95: 'Thunderstorm',
+            96: 'Thunderstorm',
+            99: 'Thunderstorm',
+        };
+        return map[code] || 'Mixed';
+    }
+
+    function parseLocalHour(isoLocal) {
+        // Open-Meteo timezone=auto returns local wall time without offset, e.g. 2026-08-26T14:00
+        const [datePart, timePart] = isoLocal.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hour, minute = 0] = timePart.split(':').map(Number);
+        return new Date(year, month - 1, day, hour, minute);
+    }
+
+    function nearestHourIndex(times, targetMs) {
+        let bestIdx = 0;
+        let bestDiff = Infinity;
+        times.forEach((iso, idx) => {
+            const diff = Math.abs(parseLocalHour(iso).getTime() - targetMs);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestIdx = idx;
+            }
+        });
+        return bestIdx;
+    }
+
+    function formatSigned(value, digits, suffix) {
+        const rounded = Number(value.toFixed(digits));
+        const sign = rounded > 0 ? '+' : '';
+        return `${sign}${rounded.toFixed(digits)}${suffix}`;
+    }
+
+    function setDelta(el, delta, digits, suffix) {
+        if (delta == null || Number.isNaN(delta)) {
+            el.classList.add('hidden');
+            return;
+        }
+        el.classList.remove('hidden', 'up', 'down', 'flat');
+        const tone = Math.abs(delta) < (digits === 0 ? 0.5 : 0.05) ? 'flat' : (delta > 0 ? 'up' : 'down');
+        el.classList.add(tone);
+        el.textContent = `${formatSigned(delta, digits, suffix)} vs 24h ago`;
+    }
+
+    function buildDeltas(weather, hourly) {
+        const pastIdx = nearestHourIndex(hourly.time, Date.now() - 24 * 60 * 60 * 1000);
+        return {
+            temp: weather.main.temp - hourly.temperature_2m[pastIdx],
+            humidity: weather.main.humidity - hourly.relative_humidity_2m[pastIdx],
+            wind: weather.wind.speed - hourly.wind_speed_10m[pastIdx],
+        };
+    }
+
+    function buildSixHourForecast(hourly) {
+        const nowIdx = nearestHourIndex(hourly.time, Date.now());
+        // Prefer the current hour or the next one if we landed slightly in the past
+        let start = nowIdx;
+        if (parseLocalHour(hourly.time[start]).getTime() < Date.now() - 30 * 60 * 1000) {
+            start = Math.min(start + 1, hourly.time.length - 1);
+        }
+        const end = Math.min(start + 6, hourly.time.length);
+        const rows = [];
+        for (let i = start; i < end; i++) {
+            const when = parseLocalHour(hourly.time[i]);
+            rows.push({
+                timeLabel: when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                temp: hourly.temperature_2m[i],
+                cond: wmoLabel(hourly.weather_code[i]),
+                precip: hourly.precipitation_probability[i],
+            });
+        }
+        return rows;
+    }
+
+    function buildThreeDaySlots(hourly) {
+        const slots = [
+            { name: 'Morning', hour: 8 },
+            { name: 'Midday', hour: 14 },
+            { name: 'Evening', hour: 20 },
+        ];
+        const byDayHour = new Map();
+        hourly.time.forEach((iso, idx) => {
+            const when = parseLocalHour(iso);
+            const key = `${when.getFullYear()}-${when.getMonth()}-${when.getDate()}-${when.getHours()}`;
+            byDayHour.set(key, idx);
+        });
+
+        const days = [];
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() + 1);
+
+        for (let d = 0; d < 3; d++) {
+            const day = new Date(start);
+            day.setDate(start.getDate() + d);
+            const label = day.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+            const daySlots = slots.map(({ name, hour }) => {
+                const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}-${hour}`;
+                const idx = byDayHour.get(key);
+                if (idx == null) return { name, temp: null, cond: '—' };
+                return {
+                    name,
+                    temp: hourly.temperature_2m[idx],
+                    cond: wmoLabel(hourly.weather_code[idx]),
+                };
+            });
+            days.push({ label, slots: daySlots });
+        }
+        return days;
+    }
+
+    function renderForecast(weather, forecast) {
+        const sections = document.getElementById('forecast-sections');
+        const unavailable = document.getElementById('forecast-unavailable');
+
+        if (!forecast || !forecast.hourly || !forecast.hourly.time?.length) {
+            sections.classList.add('hidden');
+            unavailable.classList.remove('hidden');
+            ['temp-delta', 'humidity-delta', 'wind-delta'].forEach((id) => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            return;
+        }
+
+        unavailable.classList.add('hidden');
+        sections.classList.remove('hidden');
+
+        const deltas = buildDeltas(weather, forecast.hourly);
+        setDelta(document.getElementById('temp-delta'), deltas.temp, 1, '°C');
+        setDelta(document.getElementById('humidity-delta'), deltas.humidity, 0, '%');
+        setDelta(document.getElementById('wind-delta'), deltas.wind, 1, ' m/s');
+
+        document.getElementById('hour-strip').innerHTML = buildSixHourForecast(forecast.hourly).map((row) => `
+            <div class="hour-cell">
+                <div class="hour-time">${row.timeLabel}</div>
+                <div class="hour-temp">${row.temp.toFixed(0)}°</div>
+                <div class="hour-cond">${row.cond}</div>
+                <div class="hour-precip">${row.precip == null ? '—' : `${row.precip}% rain`}</div>
+            </div>
+        `).join('');
+
+        document.getElementById('day-forecast-list').innerHTML = buildThreeDaySlots(forecast.hourly).map((day) => `
+            <div class="day-forecast">
+                <div class="day-forecast-label">${day.label}</div>
+                <div class="day-slots">
+                    ${day.slots.map((slot) => `
+                        <div class="day-slot">
+                            <div class="day-slot-name">${slot.name}</div>
+                            <div class="day-slot-temp">${slot.temp == null ? '—' : `${slot.temp.toFixed(0)}°`}</div>
+                            <div class="day-slot-cond">${slot.cond}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderDashboard(weather, air, forecast) {
         document.getElementById('status').innerText = `Location: ${weather.name}`;
         document.getElementById('dashboard').classList.remove('hidden');
 
@@ -447,6 +752,8 @@
         document.getElementById('wind').innerText = weather.wind.speed.toFixed(1);
         const description = weather.weather[0].description;
         document.getElementById('desc').innerText = description.charAt(0).toUpperCase() + description.slice(1);
+
+        renderForecast(weather, forecast);
 
         // Core AQI Value — marker sits at the center of each 1–5 band
         const aqiValue = air.list[0].main.aqi;
