@@ -2,7 +2,6 @@ import { fetchAtmosphere } from './api/fetchAtmosphere.js';
 import { bindPollutantTooltipDismiss } from './ui/air.js';
 import { renderDashboard } from './ui/dashboard.js';
 import { showError } from './ui/error.js';
-import { bindDayNav } from './ui/forecast.js';
 
 async function handleLocationSuccess(position) {
     const lat = position.coords.latitude;
@@ -29,7 +28,6 @@ function handleLocationError(error) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    bindDayNav();
     bindPollutantTooltipDismiss();
 
     if (navigator.geolocation) {

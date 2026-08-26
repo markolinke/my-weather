@@ -1,8 +1,7 @@
 import {
+    buildDayForecast,
     buildDeltas,
     buildSixHourForecast,
-    buildThreeDaySlots,
-    dayPageCount,
 } from '../domain/forecast.js';
 import { setDelta } from './deltas.js';
 import {
@@ -12,48 +11,6 @@ import {
     weatherToneClass,
 } from './icons.js';
 
-let dayForecastPage = 0;
-let dayForecastHourly = null;
-
-function renderDayForecastPage() {
-    if (!dayForecastHourly) return;
-
-    const pages = dayPageCount(dayForecastHourly);
-    dayForecastPage = Math.max(0, Math.min(dayForecastPage, pages - 1));
-
-    document.getElementById('day-forecast-list').innerHTML = buildThreeDaySlots(dayForecastHourly, dayForecastPage).map((day) => `
-        <div class="day-forecast">
-            <div class="day-forecast-label">${day.label}</div>
-            <div class="day-slots">
-                ${day.slots.map((slot) => `
-                    <div class="day-slot ${slot.code == null ? '' : weatherToneClass(slot.code)}">
-                        <div class="day-slot-name">${slot.name}</div>
-                        <div class="wx-icon">${slot.code == null ? '' : weatherIconSvg(slot.code)}</div>
-                        <div class="day-slot-temp ${tempToneClass(slot.temp)}">${slot.temp == null ? '—' : `${slot.temp.toFixed(0)}°`}</div>
-                        <div class="day-slot-cond">${slot.cond}</div>
-                        ${precipMarkup(slot.precip)}
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `).join('');
-
-    document.getElementById('day-page-label').textContent = `${dayForecastPage + 1} / ${pages}`;
-    document.getElementById('day-prev').disabled = dayForecastPage <= 0;
-    document.getElementById('day-next').disabled = dayForecastPage >= pages - 1;
-}
-
-export function bindDayNav() {
-    document.getElementById('day-prev').addEventListener('click', () => {
-        dayForecastPage -= 1;
-        renderDayForecastPage();
-    });
-    document.getElementById('day-next').addEventListener('click', () => {
-        dayForecastPage += 1;
-        renderDayForecastPage();
-    });
-}
-
 export function renderForecast(weather, forecast) {
     const sections = document.getElementById('forecast-sections');
     const unavailable = document.getElementById('forecast-unavailable');
@@ -61,7 +18,6 @@ export function renderForecast(weather, forecast) {
     if (!forecast || !forecast.hourly || !forecast.hourly.time?.length) {
         sections.classList.add('hidden');
         unavailable.classList.remove('hidden');
-        dayForecastHourly = null;
         ['temp-delta', 'humidity-delta', 'wind-delta'].forEach((id) => {
             document.getElementById(id).classList.add('hidden');
         });
@@ -86,7 +42,20 @@ export function renderForecast(weather, forecast) {
         </div>
     `).join('');
 
-    dayForecastHourly = forecast.hourly;
-    dayForecastPage = 0;
-    renderDayForecastPage();
+    document.getElementById('day-forecast-list').innerHTML = buildDayForecast(forecast.hourly).map((day) => `
+        <div class="day-forecast">
+            <div class="day-forecast-label">${day.label}</div>
+            <div class="day-slots">
+                ${day.slots.map((slot) => `
+                    <div class="day-slot ${slot.code == null ? '' : weatherToneClass(slot.code)}">
+                        <div class="day-slot-name">${slot.name}</div>
+                        <div class="wx-icon">${slot.code == null ? '' : weatherIconSvg(slot.code)}</div>
+                        <div class="day-slot-temp ${tempToneClass(slot.temp)}">${slot.temp == null ? '—' : `${slot.temp.toFixed(0)}°`}</div>
+                        <div class="day-slot-cond">${slot.cond}</div>
+                        ${precipMarkup(slot.precip)}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
 }

@@ -4,5 +4,5 @@ export const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
 export const FORECAST_PAST_HOURS = 24;
 export const FORECAST_DAYS = 10;
 
-export const DAY_PAGE_SIZE = 3;
-export const MAX_DAY_PAGES = 3;
+/** Horizontal day strip: days ahead from tomorrow. */
+export const DAY_FORECAST_COUNT = 9;

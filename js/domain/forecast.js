@@ -1,4 +1,4 @@
-import { DAY_PAGE_SIZE, MAX_DAY_PAGES } from '../config.js';
+import { DAY_FORECAST_COUNT } from '../config.js';
 import { wmoLabel } from './wmo.js';
 
 /** Open-Meteo timezone=auto returns local wall time without offset, e.g. 2026-08-26T14:00 */
@@ -60,34 +60,14 @@ export function tomorrowMidnight() {
     return start;
 }
 
-export function availableForecastDayCount(hourly) {
-    const byDay = new Set();
-    hourly.time.forEach((iso) => {
-        const when = parseLocalHour(iso);
-        byDay.add(`${when.getFullYear()}-${when.getMonth()}-${when.getDate()}`);
-    });
-    const start = tomorrowMidnight();
-    let count = 0;
-    for (let d = 0; d < DAY_PAGE_SIZE * MAX_DAY_PAGES; d++) {
-        const day = new Date(start);
-        day.setDate(start.getDate() + d);
-        const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
-        if (!byDay.has(key)) break;
-        count += 1;
-    }
-    return count;
-}
+const DAY_SLOTS = [
+    { name: 'Morning', hour: 8 },
+    { name: 'Midday', hour: 14 },
+    { name: 'Evening', hour: 20 },
+];
 
-export function dayPageCount(hourly) {
-    return Math.max(1, Math.ceil(availableForecastDayCount(hourly) / DAY_PAGE_SIZE));
-}
-
-export function buildThreeDaySlots(hourly, page = 0) {
-    const slots = [
-        { name: 'Morning', hour: 8 },
-        { name: 'Midday', hour: 14 },
-        { name: 'Evening', hour: 20 },
-    ];
+/** Upcoming days (from tomorrow), each with morning / midday / evening slots. */
+export function buildDayForecast(hourly) {
     const byDayHour = new Map();
     hourly.time.forEach((iso, idx) => {
         const when = parseLocalHour(iso);
@@ -97,13 +77,16 @@ export function buildThreeDaySlots(hourly, page = 0) {
 
     const days = [];
     const start = tomorrowMidnight();
-    start.setDate(start.getDate() + page * DAY_PAGE_SIZE);
 
-    for (let d = 0; d < DAY_PAGE_SIZE; d++) {
+    for (let d = 0; d < DAY_FORECAST_COUNT; d++) {
         const day = new Date(start);
         day.setDate(start.getDate() + d);
+        const dayKey = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}-`;
+        const hasAnyHour = [...byDayHour.keys()].some((k) => k.startsWith(dayKey));
+        if (!hasAnyHour) break;
+
         const label = day.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-        const daySlots = slots.map(({ name, hour }) => {
+        const slots = DAY_SLOTS.map(({ name, hour }) => {
             const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}-${hour}`;
             const idx = byDayHour.get(key);
             if (idx == null) return { name, temp: null, code: null, cond: '—', precip: null };
@@ -115,7 +98,7 @@ export function buildThreeDaySlots(hourly, page = 0) {
                 precip: hourly.precipitation_probability[idx],
             };
         });
-        days.push({ label, slots: daySlots });
+        days.push({ label, slots });
     }
     return days;
 }

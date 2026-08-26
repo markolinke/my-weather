@@ -193,67 +193,35 @@ h3.section-gap { margin-top: 36px; }
     height: 26px;
     margin-bottom: 4px;
 }
-.day-forecast-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin: 36px 0 10px 0;
-}
-.day-forecast-header h3 {
-    margin: 0;
-}
-.day-nav {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-.day-nav-btn {
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-    background: #fff;
-    color: #212529;
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-}
-.day-nav-btn:hover:not(:disabled) {
-    background: #f1f3f5;
-}
-.day-nav-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
-}
-.day-page-label {
-    font-size: 11px;
-    color: #868e96;
-    min-width: 4.5em;
-    text-align: center;
-}
 .day-forecast-list {
-    display: grid;
-    gap: 12px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
 }
 .day-forecast {
+    flex: 0 0 132px;
+    scroll-snap-align: start;
     background: #fdfdfd;
     border: 1px solid #e9ecef;
     border-radius: 10px;
-    padding: 12px 12px 16px;
+    padding: 12px 10px 14px;
 }
 .day-forecast-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: #212529;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    text-align: center;
+    line-height: 1.25;
 }
 .day-slots {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    align-items: stretch;
 }
 .data-credit {
     margin-top: 16px;
