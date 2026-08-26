@@ -42,6 +42,25 @@ h3.section-gap { margin-top: 36px; }
     font-size: 18px;
     font-weight: bold;
 }
+.metric-value-text {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+    padding-top: 2px;
+}
+.rain-metric-box {
+    position: relative;
+    padding-right: 44px;
+}
+.rain-metric-icon {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    color: #343a40;
+}
 .metric-delta {
     margin-top: 6px;
     font-size: 11px;
