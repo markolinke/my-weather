@@ -10,17 +10,7 @@ const RAIN_TONE = {
     raining: 'wx-sky',
 };
 
-export function renderDashboard(weather, air, forecast) {
-    document.getElementById('status').innerText = buildObservationStatus({
-        dt: weather.dt,
-        placeLabel: weather.name,
-    });
-    document.getElementById('dashboard').classList.remove('hidden');
-
-    document.getElementById('temp').innerText = weather.main.temp.toFixed(1);
-    document.getElementById('humidity').innerText = weather.main.humidity;
-    document.getElementById('wind').innerText = weather.wind.speed.toFixed(1);
-
+function renderRainMetric(forecast) {
     const rain = buildRainIndicator(forecast?.hourly);
     const kind = rain?.kind ?? 'unknown';
 
@@ -33,7 +23,25 @@ export function renderDashboard(weather, air, forecast) {
     const rainMetric = document.getElementById('rain-metric');
     rainMetric.classList.remove('wx-sun', 'wx-sky', 'wx-cloud');
     if (RAIN_TONE[kind]) rainMetric.classList.add(RAIN_TONE[kind]);
+}
 
-    renderForecast(weather, forecast);
+/** Re-render forecast-dependent UI after a model switch (keeps place/status/air). */
+export function applyForecast(weather, forecast, modelId) {
+    renderRainMetric(forecast);
+    renderForecast(weather, forecast, modelId);
+}
+
+export function renderDashboard(weather, air, forecast, modelId) {
+    document.getElementById('status').innerText = buildObservationStatus({
+        dt: weather.dt,
+        placeLabel: weather.name,
+    });
+    document.getElementById('dashboard').classList.remove('hidden');
+
+    document.getElementById('temp').innerText = weather.main.temp.toFixed(1);
+    document.getElementById('humidity').innerText = weather.main.humidity;
+    document.getElementById('wind').innerText = weather.wind.speed.toFixed(1);
+
+    applyForecast(weather, forecast, modelId);
     renderAir(air);
 }

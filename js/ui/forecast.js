@@ -3,6 +3,10 @@ import {
     buildDeltas,
     buildHourlyForecast,
 } from '../domain/forecast.js';
+import {
+    FORECAST_MODELS,
+    getModel,
+} from '../domain/forecastModels.js';
 import { setDelta } from './deltas.js';
 import {
     precipMarkup,
@@ -11,7 +15,38 @@ import {
     weatherToneClass,
 } from './icons.js';
 
-export function renderForecast(weather, forecast) {
+export function populateForecastModelSelect(selectedId) {
+    const select = document.getElementById('forecast-model');
+    if (!select || select.options.length) return;
+
+    FORECAST_MODELS.forEach((model) => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = model.label;
+        select.appendChild(option);
+    });
+    select.value = getModel(selectedId).id;
+}
+
+export function setForecastModelCredit(modelId) {
+    const el = document.getElementById('forecast-model-credit');
+    if (!el) return;
+    const { label } = getModel(modelId);
+    el.textContent = ` · ${label}`;
+}
+
+export function setForecastUpdating(isUpdating) {
+    document.getElementById('forecast-updating')?.classList.toggle('hidden', !isUpdating);
+}
+
+export function bindForecastModelChange(onChange) {
+    const select = document.getElementById('forecast-model');
+    if (!select || select.dataset.bound === '1') return;
+    select.dataset.bound = '1';
+    select.addEventListener('change', () => onChange(select.value));
+}
+
+export function renderForecast(weather, forecast, modelId) {
     const sections = document.getElementById('forecast-sections');
     const unavailable = document.getElementById('forecast-unavailable');
 
@@ -26,6 +61,7 @@ export function renderForecast(weather, forecast) {
 
     unavailable.classList.add('hidden');
     sections.classList.remove('hidden');
+    setForecastModelCredit(modelId);
 
     const deltas = buildDeltas(weather, forecast.hourly);
     setDelta(document.getElementById('temp-delta'), deltas.temp, 1, '°C');

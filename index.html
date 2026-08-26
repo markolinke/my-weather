@@ -91,7 +91,14 @@
                 </div>
                 <div class="day-forecast-list" id="day-forecast-list"></div>
             </div>
-            <p class="data-credit">Weather data provided by <a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeather</a>. Forecast by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a></p>
+
+            <div class="forecast-toolbar">
+                <h4 class="section-gap">Forecast model</h4>
+                <select id="forecast-model" class="forecast-model-select"></select>
+                <p id="forecast-updating" class="forecast-updating hidden" aria-live="polite">Updating forecast…</p>
+            </div>
+
+            <p class="data-credit">Weather data provided by <a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeather</a>. Forecast by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a><span id="forecast-model-credit"></span></p>
         </div>
         <p id="forecast-unavailable" class="forecast-note hidden">Forecast unavailable right now.</p>
     </div>

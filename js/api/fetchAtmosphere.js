@@ -3,20 +3,36 @@ import {
     FORECAST_DAYS,
     FORECAST_PAST_HOURS,
 } from '../config.js';
+import { modelsQueryParam } from '../domain/forecastModels.js';
+
+function buildForecastUrl(lat, lon, modelId) {
+    let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&wind_speed_unit=ms&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation_probability&past_hours=${FORECAST_PAST_HOURS}&forecast_days=${FORECAST_DAYS}`;
+    const models = modelsQueryParam(modelId);
+    if (models) url += `&models=${models}`;
+    return url;
+}
+
+/**
+ * Fetch Open-Meteo hourly forecast only (for model switches).
+ * @returns {Promise<object|null>}
+ */
+export async function fetchForecast(lat, lon, modelId) {
+    const res = await fetch(buildForecastUrl(lat, lon, modelId));
+    return res.ok ? res.json() : null;
+}
 
 /**
  * Fetch current weather, air quality, and hourly forecast for a location.
  * Forecast may be null if Open-Meteo fails while OpenWeather succeeds.
  */
-export async function fetchAtmosphere(lat, lon) {
+export async function fetchAtmosphere(lat, lon, modelId) {
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
     const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
-    const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&wind_speed_unit=ms&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation_probability&past_hours=${FORECAST_PAST_HOURS}&forecast_days=${FORECAST_DAYS}`;
 
-    const [weatherRes, aqiRes, forecastRes] = await Promise.all([
+    const [weatherRes, aqiRes, forecast] = await Promise.all([
         fetch(weatherUrl),
         fetch(aqiUrl),
-        fetch(forecastUrl),
+        fetchForecast(lat, lon, modelId),
     ]);
 
     if (!weatherRes.ok || !aqiRes.ok) {
@@ -25,7 +41,6 @@ export async function fetchAtmosphere(lat, lon) {
 
     const weather = await weatherRes.json();
     const air = await aqiRes.json();
-    const forecast = forecastRes.ok ? await forecastRes.json() : null;
 
     return { weather, air, forecast };
 }

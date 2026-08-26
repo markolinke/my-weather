@@ -47,7 +47,7 @@ export function buildHourlyForecast(hourly) {
             temp: hourly.temperature_2m[i],
             code: hourly.weather_code[i],
             cond: wmoLabel(hourly.weather_code[i]),
-            precip: hourly.precipitation_probability[i],
+            precip: hourly.precipitation_probability?.[i] ?? null,
         });
     }
     return rows;
@@ -95,7 +95,7 @@ export function buildDayForecast(hourly) {
                 temp: hourly.temperature_2m[idx],
                 code: hourly.weather_code[idx],
                 cond: wmoLabel(hourly.weather_code[idx]),
-                precip: hourly.precipitation_probability[idx],
+                precip: hourly.precipitation_probability?.[idx] ?? null,
             };
         });
         days.push({ label, slots });
