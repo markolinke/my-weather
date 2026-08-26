@@ -55,10 +55,107 @@
             border-left: 4px solid #212529;
             margin-bottom: 15px;
         }
+        .aqi-scale {
+            margin-top: 14px;
+        }
+        .aqi-track {
+            position: relative;
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(
+                to right,
+                #2f9e44 0%,
+                #2f9e44 20%,
+                #74b816 20%,
+                #74b816 40%,
+                #f59f00 40%,
+                #f59f00 60%,
+                #f76707 60%,
+                #f76707 80%,
+                #e03131 80%,
+                #e03131 100%
+            );
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+        }
+        .aqi-acceptable {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            left: 0;
+            width: 40%;
+            border: 2px solid #212529;
+            border-radius: 8px;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+        .aqi-marker {
+            position: absolute;
+            top: 50%;
+            width: 16px;
+            height: 16px;
+            margin-left: -8px;
+            border-radius: 50%;
+            background: #212529;
+            border: 3px solid #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+            transform: translateY(-50%);
+            transition: left 0.35s ease;
+        }
+        .aqi-marker::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: calc(100% + 2px);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #212529;
+            transform: translateX(-50%);
+        }
+        .aqi-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 10px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .aqi-legend {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #495057;
+        }
+        .aqi-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .aqi-legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            border: 2px solid #212529;
+            box-sizing: border-box;
+        }
+        .aqi-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #212529;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
         .pollutant-list {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr;
+            gap: 12px;
             background: #fdfdfd;
             border: 1px solid #e9ecef;
             padding: 12px;
@@ -66,13 +163,52 @@
         }
         .pollutant-item {
             font-size: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #e9ecef;
+        }
+        .pollutant-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .pollutant-header {
             display: flex;
             justify-content: space-between;
-            padding: 4px 0;
-            border-bottom: 1px dashed #e9ecef;
+            margin-bottom: 6px;
         }
         .pollutant-name { font-weight: 500; color: #495057; }
         .pollutant-val { font-weight: bold; color: #212529; }
+        .pollutant-scale {
+            position: relative;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(
+                to right,
+                #2f9e44 0%,
+                #74b816 25%,
+                #f59f00 50%,
+                #f76707 75%,
+                #e03131 100%
+            );
+        }
+        .pollutant-acceptable {
+            position: absolute;
+            top: -2px;
+            bottom: -2px;
+            left: 0;
+            border: 1.5px solid #212529;
+            border-radius: 5px;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+        .pollutant-marker {
+            position: absolute;
+            top: 50%;
+            width: 12px;
+            height: 12px;
+            margin-left: -6px;
+            border-radius: 50%;
+            background: #212529;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            transform: translateY(-50%);
+        }
         .error {
             color: #dc3545;
             font-weight: bold;
@@ -115,36 +251,33 @@
         <div class="aqi-full-box">
             <div class="metric-title">Overall Air Quality Index (AQI)</div>
             <div class="metric-value" id="aqi-display">--</div>
-            <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">Scale: 1 (Good) to 5 (Very Poor)</div>
+            <div class="aqi-scale">
+                <div class="aqi-track">
+                    <div class="aqi-acceptable" title="Acceptable range: Good–Fair (1–2)"></div>
+                    <div class="aqi-marker" id="aqi-marker" style="left: 10%;"></div>
+                </div>
+                <div class="aqi-labels">
+                    <span>Good</span>
+                    <span>Fair</span>
+                    <span>Moderate</span>
+                    <span>Poor</span>
+                    <span>Very Poor</span>
+                </div>
+                <div class="aqi-legend">
+                    <span class="aqi-legend-item">
+                        <span class="aqi-legend-swatch"></span>
+                        Acceptable (1–2)
+                    </span>
+                    <span class="aqi-legend-item">
+                        <span class="aqi-legend-dot"></span>
+                        Current
+                    </span>
+                </div>
+            </div>
         </div>
 
         <h3>Raw Pollutants Breakdown (<span style="text-transform: none;">μg/m³</span>)</h3>
-        <div class="pollutant-list">
-            <div class="pollutant-item">
-                <span class="pollutant-name">PM2.5 (Fine Dust)</span>
-                <span class="pollutant-val" id="pm2_5">--</span>
-            </div>
-            <div class="pollutant-item">
-                <span class="pollutant-name">PM10 (Coarse Dust)</span>
-                <span class="pollutant-val" id="pm10">--</span>
-            </div>
-            <div class="pollutant-item">
-                <span class="pollutant-name">O₃ (Ozone)</span>
-                <span class="pollutant-val" id="o3">--</span>
-            </div>
-            <div class="pollutant-item">
-                <span class="pollutant-name">NO₂ (Nitrogen Dioxide)</span>
-                <span class="pollutant-val" id="no2">--</span>
-            </div>
-            <div class="pollutant-item">
-                <span class="pollutant-name">SO₂ (Sulfur Dioxide)</span>
-                <span class="pollutant-val" id="so2">--</span>
-            </div>
-            <div class="pollutant-item">
-                <span class="pollutant-name">CO (Carbon Monoxide)</span>
-                <span class="pollutant-val" id="co">--</span>
-            </div>
-        </div>
+        <div class="pollutant-list" id="pollutant-list"></div>
     </div>
 </div>
 
@@ -183,6 +316,24 @@
         }
     }
 
+    // OpenWeatherMap AQI pollutant thresholds (μg/m³): Good, Fair, Moderate, Poor, Very Poor
+    const POLLUTANTS = [
+        { key: 'pm2_5', label: 'PM2.5 (Fine Dust)', thresholds: [10, 25, 50, 75] },
+        { key: 'pm10', label: 'PM10 (Coarse Dust)', thresholds: [20, 50, 100, 200] },
+        { key: 'o3', label: 'O₃ (Ozone)', thresholds: [60, 100, 140, 180] },
+        { key: 'no2', label: 'NO₂ (Nitrogen Dioxide)', thresholds: [40, 70, 150, 200] },
+        { key: 'so2', label: 'SO₂ (Sulfur Dioxide)', thresholds: [20, 80, 250, 350] },
+        { key: 'co', label: 'CO (Carbon Monoxide)', thresholds: [4400, 9400, 12400, 15400] },
+    ];
+
+    function clampPercent(value) {
+        return Math.max(0, Math.min(100, value));
+    }
+
+    function markerPercent(value, max) {
+        return clampPercent((value / max) * 100);
+    }
+
     function renderDashboard(weather, air) {
         document.getElementById('status').innerText = `Location: ${weather.name}`;
         document.getElementById('dashboard').classList.remove('hidden');
@@ -194,19 +345,34 @@
         const description = weather.weather[0].description;
         document.getElementById('desc').innerText = description.charAt(0).toUpperCase() + description.slice(1);
 
-        // Core AQI Value
+        // Core AQI Value — marker sits at the center of each 1–5 band
         const aqiValue = air.list[0].main.aqi;
         const aqiLabels = {1: "1 (Good)", 2: "2 (Fair)", 3: "3 (Moderate)", 4: "4 (Poor)", 5: "5 (Very Poor)"};
         document.getElementById('aqi-display').innerText = aqiLabels[aqiValue] || aqiValue;
+        document.getElementById('aqi-marker').style.left = `${((aqiValue - 0.5) / 5) * 100}%`;
 
-        // Raw Pollutant Compounding Elements
+        // Pollutant scales: outline = acceptable (Good–Fair), dot = current reading
         const components = air.list[0].components;
-        document.getElementById('pm2_5').innerText = components.pm2_5.toFixed(1);
-        document.getElementById('pm10').innerText = components.pm10.toFixed(1);
-        document.getElementById('o3').innerText = components.o3.toFixed(1);
-        document.getElementById('no2').innerText = components.no2.toFixed(1);
-        document.getElementById('so2').innerText = components.so2.toFixed(1);
-        document.getElementById('co').innerText = components.co.toFixed(1);
+        const list = document.getElementById('pollutant-list');
+        list.innerHTML = POLLUTANTS.map(({ key, label, thresholds }) => {
+            const value = components[key];
+            const fairMax = thresholds[1];
+            const scaleMax = thresholds[3];
+            const acceptableWidth = clampPercent((fairMax / scaleMax) * 100);
+            const currentLeft = markerPercent(value, scaleMax);
+            return `
+                <div class="pollutant-item">
+                    <div class="pollutant-header">
+                        <span class="pollutant-name">${label}</span>
+                        <span class="pollutant-val">${value.toFixed(1)}</span>
+                    </div>
+                    <div class="pollutant-scale">
+                        <div class="pollutant-acceptable" style="width: ${acceptableWidth}%;" title="Acceptable up to ${fairMax} μg/m³"></div>
+                        <div class="pollutant-marker" style="left: ${currentLeft}%;" title="Current: ${value.toFixed(1)}"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     function handleLocationError(error) {
