@@ -1,13 +1,11 @@
 import {
     buildDayForecast,
-    buildDeltas,
     buildHourlyForecast,
 } from '../domain/forecast.js';
 import {
     FORECAST_MODELS,
     getModel,
 } from '../domain/forecastModels.js';
-import { setDelta } from './deltas.js';
 import {
     precipMarkup,
     tempToneClass,
@@ -46,27 +44,19 @@ export function bindForecastModelChange(onChange) {
     select.addEventListener('change', () => onChange(select.value));
 }
 
-export function renderForecast(weather, forecast, modelId) {
+export function renderForecast(forecast, modelId) {
     const sections = document.getElementById('forecast-sections');
     const unavailable = document.getElementById('forecast-unavailable');
 
     if (!forecast || !forecast.hourly || !forecast.hourly.time?.length) {
         sections.classList.add('hidden');
         unavailable.classList.remove('hidden');
-        ['temp-delta', 'humidity-delta', 'wind-delta'].forEach((id) => {
-            document.getElementById(id).classList.add('hidden');
-        });
         return;
     }
 
     unavailable.classList.add('hidden');
     sections.classList.remove('hidden');
     setForecastModelCredit(modelId);
-
-    const deltas = buildDeltas(weather, forecast.hourly);
-    setDelta(document.getElementById('temp-delta'), deltas.temp, 1, '°C');
-    setDelta(document.getElementById('humidity-delta'), deltas.humidity, 0, '%');
-    setDelta(document.getElementById('wind-delta'), deltas.wind, 1, ' m/s');
 
     document.getElementById('hour-strip').innerHTML = buildHourlyForecast(forecast.hourly).map((row) => `
         <div class="hour-cell ${weatherToneClass(row.code)}">

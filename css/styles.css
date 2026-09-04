@@ -61,15 +61,6 @@ h3.section-gap { margin-top: 36px; }
     margin: 0;
     color: #343a40;
 }
-.metric-delta {
-    margin-top: 6px;
-    font-size: 11px;
-    color: #6c757d;
-    font-weight: 500;
-}
-.metric-delta.up { color: #c92a2a; }
-.metric-delta.down { color: #1971c2; }
-.metric-delta.flat { color: #868e96; }
 .forecast-note {
     font-size: 13px;
     color: #868e96;

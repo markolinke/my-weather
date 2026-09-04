@@ -22,15 +22,6 @@ export function nearestHourIndex(times, targetMs) {
     return bestIdx;
 }
 
-export function buildDeltas(weather, hourly) {
-    const pastIdx = nearestHourIndex(hourly.time, Date.now() - 24 * 60 * 60 * 1000);
-    return {
-        temp: weather.main.temp - hourly.temperature_2m[pastIdx],
-        humidity: weather.main.humidity - hourly.relative_humidity_2m[pastIdx],
-        wind: weather.wind.speed - hourly.wind_speed_10m[pastIdx],
-    };
-}
-
 export function buildHourlyForecast(hourly) {
     const nowIdx = nearestHourIndex(hourly.time, Date.now());
     // Prefer the current hour or the next one if we landed slightly in the past

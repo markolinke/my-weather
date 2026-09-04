@@ -26,9 +26,9 @@ function renderRainMetric(forecast) {
 }
 
 /** Re-render forecast-dependent UI after a model switch (keeps place/status/air). */
-export function applyForecast(weather, forecast, modelId) {
+export function applyForecast(forecast, modelId) {
     renderRainMetric(forecast);
-    renderForecast(weather, forecast, modelId);
+    renderForecast(forecast, modelId);
 }
 
 export function renderDashboard(weather, air, forecast, modelId) {
@@ -42,6 +42,6 @@ export function renderDashboard(weather, air, forecast, modelId) {
     document.getElementById('humidity').innerText = weather.main.humidity;
     document.getElementById('wind').innerText = weather.wind.speed.toFixed(1);
 
-    applyForecast(weather, forecast, modelId);
+    applyForecast(forecast, modelId);
     renderAir(air);
 }

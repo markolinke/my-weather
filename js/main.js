@@ -14,7 +14,7 @@ import {
 } from './ui/forecast.js';
 
 let lastCoords = null;
-let lastWeather = null;
+let dashboardReady = false;
 let currentModelId = loadStoredModelId();
 
 async function handleLocationSuccess(position) {
@@ -26,7 +26,7 @@ async function handleLocationSuccess(position) {
 
     try {
         const { weather, air, forecast } = await fetchAtmosphere(lat, lon, currentModelId);
-        lastWeather = weather;
+        dashboardReady = true;
         renderDashboard(weather, air, forecast, currentModelId);
     } catch (err) {
         showError(err.message);
@@ -38,7 +38,7 @@ async function handleModelChange(modelId) {
     saveStoredModelId(modelId);
     setForecastModelCredit(modelId);
 
-    if (!lastCoords || !lastWeather) return;
+    if (!lastCoords || !dashboardReady) return;
 
     const updating = document.getElementById('forecast-updating');
     if (updating) updating.textContent = 'Updating forecast…';
@@ -47,7 +47,7 @@ async function handleModelChange(modelId) {
     try {
         const forecast = await fetchForecast(lastCoords.lat, lastCoords.lon, modelId);
         if (forecast?.hourly?.time?.length) {
-            applyForecast(lastWeather, forecast, modelId);
+            applyForecast(forecast, modelId);
             setForecastUpdating(false);
             return;
         }
